@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#1b2241">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="在 3D 校园里走进西安翻译学院。探索校园全景、查看实时位置，结合天气预报比较不同时段的择荫步行方案。">
+  <title>向阳而行 · 西译校园导览</title>
+  <link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/leaflet/leaflet.css">
+  <link rel="stylesheet" href="styles.css?v=20261119"><link rel="stylesheet" href="navigation.css?v=20261119">
+  <link rel="stylesheet" href="showcase.css?v=20261119">
+  <link rel="stylesheet" href="route-view.css?v=20261119">
+  <link rel="stylesheet" href="panorama-view.css?v=20261119">
+  <link rel="stylesheet" href="indoor-view.css?v=20261119">
+  <link rel="stylesheet" href="polish.css?v=20261119">
+</head>
+<body>
+  <script>try{if(sessionStorage.getItem("sunwalk.splash"))document.documentElement.classList.add("no-splash");sessionStorage.setItem("sunwalk.splash","1");}catch(e){}</script>
+  <div id="splash" aria-hidden="true"><div class="splash-card"><img src="assets/xfu-emblem.png" alt=""><strong>向阳而行</strong><small>西安翻译学院 · 校园步行导览</small><i></i></div></div>
+  <header class="site-head">
+    <a class="brand" href="#explore" aria-label="向阳而行首页"><img src="assets/mark.svg" alt=""><span><strong>向阳而行</strong><small>SUNWALK ATLAS</small></span></a>
+    <div class="head-school" title="西安翻译学院 · 校园步行导览"><img class="xfu-logo" src="assets/xfu-logo.png" alt="西安翻译学院"><img class="xfu-emblem" src="assets/xfu-emblem.png" alt="西安翻译学院校徽"></div>
+    <nav aria-label="主导航" id="nav">
+      <button data-tab="explore"><i data-i="map"></i>地图导航</button>
+      <button data-tab="pano"><i data-i="pano"></i>全景漫游</button>
+      <button data-tab="route"><i data-i="route"></i>步行路线</button>
+    </nav>
+    <div class="head-actions"><button class="wx-chip" id="wxChip" data-act="wx" aria-label="校园天气"></button><button class="about-btn icon-btn" id="aboutBtn" title="作品与数据说明" aria-label="作品与数据说明"><i data-i="info"></i></button><button class="live-btn" id="liveBtn" aria-label="实时定位"><i data-i="locate"></i><span>实时定位</span></button></div>
+  </header>
+  <main class="workspace">
+    <aside class="side" aria-label="校园导览面板" id="sidebar"></aside>
+    <section class="stage" id="stage" aria-label="校园地图与实景">
+      <div id="mapViewport" aria-label="校园索引图：拖动平移，滚轮或加减键缩放，按住右键或 Shift 拖动、Q / E 键旋转" tabindex="0">
+        <div id="mapPlane">
+          <img src="assets/campus.svg?v=20261119" alt="" class="base-map" draggable="false">
+          <img src="assets/xfu-emblem.png" alt="" class="map-emblem" draggable="false">
+          <svg id="facOverlay" viewBox="0 0 2048 1320" preserveAspectRatio="none" aria-hidden="true"></svg>
+          <svg id="shadeOverlay" viewBox="0 0 2048 1320" preserveAspectRatio="none" aria-hidden="true"></svg>
+          <svg id="accessOverlay" viewBox="0 0 2048 1320" preserveAspectRatio="none" aria-hidden="true"></svg>
+          <svg id="pathOverlay" viewBox="0 0 2048 1320" preserveAspectRatio="none" aria-hidden="true"></svg>
+          <svg id="footprints" viewBox="0 0 2048 1320" preserveAspectRatio="none"></svg><div id="roadNames"></div><div id="panoPins"></div><div id="mapPins"></div>
+        </div>
+      </div>
+      <canvas id="map3d" tabindex="0" aria-label="三维校园模型：拖动平移，滚轮缩放，按住右键或 Shift 拖动旋转" hidden></canvas><canvas id="pins3d" aria-hidden="true" hidden></canvas><button id="labelProxy" tabindex="-1" aria-hidden="true" hidden></button><i id="walker3d" hidden></i><div id="tip3d" hidden></div>
+      <div id="skyFx" class="sky-fx" aria-hidden="true" hidden><i class="fx-a"></i><i class="fx-b"></i><i class="fx-c"></i></div>
+      <div id="geoMap" hidden aria-label="地理地图"></div>
+      <div id="panoView" hidden></div>
+      <div class="map-ui" id="mapUI">
+        <div class="map-top"><div class="map-top-left"><div class="map-type" role="group" aria-label="地图形式"><button id="dim3dBtn" aria-pressed="false" title="3D 校园"><i data-i="cube"></i>3D 地图</button><button id="dim2dBtn" aria-pressed="false" title="平面地图"><i data-i="map"></i>2D 地图</button></div><button id="layerBack" class="layer-back" data-act="back-map" hidden></button></div><div class="map-presentation-tools">
+          <button type="button" class="map-focus-btn" id="mapFocusBtn" aria-pressed="false" aria-label="专注地图" title="收起面板，专注查看地图"><i data-i="focus-map"></i><span>专注地图</span></button>
+          <button type="button" class="compass" aria-label="将三维地图转回正北" title="将三维地图转回正北"><span>N</span><svg viewBox="0 0 20 24" aria-hidden="true"><path fill="#285641" d="m10 2 5 18-5-5z"/><path fill="#a7b7a0" d="m10 2-5 18 5-5z"/></svg><i class="sun-dot" id="sunDot" hidden></i></button></div></div>
+        <div id="zoneSwitch" class="zone-switch" role="group" aria-label="校区视角与地图图层"><button data-zone-view="全校">全校</button><button data-zone-view="东区">东区</button><button data-zone-view="西区">西区</button><button data-act="access-focus">天渡 / 校门</button><button data-act="shade-layer" aria-pressed="false">林荫</button><button data-act="pano-layer" aria-pressed="false">实景</button><button data-act="faculty-layer" aria-pressed="false" title="按学部、学院给教学楼着色">学部</button></div><div class="map-bottom"><div id="mapCard"></div><div class="map-tools"><button id="rot3d" class="turn-btn" title="转 45°（也可按住右键或 Shift 拖动）" aria-label="旋转视角"><i data-i="rotate"></i></button><button id="tilt3d" class="only3d" title="切换俯视和斜视" aria-label="切换俯视和斜视"><i data-i="tilt"></i></button><button id="light3d" class="only3d" title="日照与楼影：按当前时刻的太阳投影（默认关闭）" aria-label="日照与楼影" aria-pressed="false"><i data-i="shadow"></i></button><button id="zoomIn" title="放大" aria-label="放大"><i data-i="plus"></i></button><button id="zoomOut" title="缩小" aria-label="缩小"><i data-i="minus"></i></button><button id="fitBtn" title="全校概览" aria-label="全校概览"><i data-i="frame"></i></button><button id="locateMap" title="我的位置" aria-label="我的位置"><i data-i="locate"></i></button></div></div>
+        <div class="map-foot" id="mapFoot"></div>
+      </div>
+    </section>
+  </main>
+  <footer class="statusbar"><span><b></b> SUNWALK ATLAS <em>/</em> 西译校园导览 <em>/</em> <span class="build-tag" title="统一配色与动效；手机端地图优先：底部抽屉面板、紧凑地点卡；平面地图惯性拖动、可以旋转">版本 V2026.11.19 · 校园导览美化版</span></span><span class="foot-team">晴行有方队 <em>·</em> 讯飞杯 AI 创意设计挑战赛</span><button id="sourcesBtn">数据来源 <i data-i="arrow-up-right"></i></button></footer>
+  <dialog id="modal" aria-labelledby="dialogTitle"><div id="modalContent"></div></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="assets/atlas-data.js?v=20261119"></script><script src="assets/geo-data.js?v=20261119"></script><script src="assets/geo-base.js?v=20261119"></script><script src="assets/scenes.js?v=20261119"></script><script src="assets/scene-index.js?v=20261119"></script><script src="assets/pano-local.js?v=20261119"></script><script src="assets/weather-snapshot.js?v=20261119"></script><script src="assets/scene3d.js?v=20261119"></script><script src="assets/indoor-data.js?v=20261119"></script><script src="assets/faculty-data.js?v=20261119"></script>
+  <script src="assets/leaflet/leaflet.js"></script><script src="icons.js?v=20261119"></script><script src="routing.js?v=20261119"></script><script src="sun.js?v=20261119"></script><script src="map3d.js?v=20261119"></script><script src="weather.js?v=20261119"></script><script src="panorama.js?v=20261119"></script><script src="directory.js?v=20261119"></script><script src="indoor.js?v=20261119"></script><script src="app.js?v=20261119"></script>
+</body>
+</html>
+

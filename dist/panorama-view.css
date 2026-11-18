@@ -1,0 +1,282 @@
+/* The footage supplies the colour in the viewer. Indigo surfaces keep the controls readable over sky and buildings. */
+#panoView {
+  --pano-night: #171c38;
+  --pano-glass: rgba(22, 27, 55, .91);
+  --pano-gold: #ffda82;
+  --pano-coral: #ffa38b;
+  --pano-ivory: #fff9ed;
+  --pano-edge: rgba(248, 242, 255, .29);
+  --pano-inset: clamp(14px, 2.4cqw, 32px);
+  container: panorama / inline-size;
+  background: var(--pano-night);
+}
+
+#panoView:fullscreen {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+#panoView .pano-stage,
+#panoView .external-pano {
+  color: var(--pano-ivory);
+  background: var(--pano-night);
+  animation: pano-arrive 260ms ease-out;
+}
+
+@keyframes pano-arrive {
+  from { opacity: .62; }
+  to { opacity: 1; }
+}
+
+#panoView .pano-stage:focus-visible {
+  outline: 3px solid var(--pano-gold);
+  outline-offset: -4px;
+}
+
+#panoView :is(button, a):focus-visible {
+  outline: 2px solid var(--pano-gold);
+  outline-offset: 2px;
+}
+
+#panoView .pano-shade {
+  inset: 0;
+  background: linear-gradient(180deg, rgba(15, 19, 40, .26), transparent 20%, transparent 48%, rgba(15, 18, 35, .32) 72%, rgba(13, 16, 32, .91));
+}
+
+#panoView .pano-bottom {
+  position: absolute;
+  z-index: 4;
+  inset: auto var(--pano-inset) var(--pano-inset);
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px 22px;
+  pointer-events: none;
+}
+
+#panoView .pano-title {
+  position: static;
+  min-width: 0;
+  color: #fff;
+  text-shadow: 0 2px 9px rgba(9, 12, 25, .65);
+}
+
+#panoView .pano-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  border: 0;
+  border-radius: 4px;
+  padding: 3px 8px;
+  color: var(--pano-gold);
+  background: var(--pano-glass);
+  font: 650 11px/1.5 var(--sans, sans-serif);
+  letter-spacing: .05em;
+  text-shadow: none;
+}
+
+#panoView .pano-chip::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+#panoView .pano-title strong {
+  margin: 6px 0 4px;
+  font-size: clamp(23px, 3.1cqw, 44px);
+  font-weight: 730;
+  line-height: 1.17;
+  letter-spacing: .015em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+#panoView .pano-hint { color: #fffbf4; font-size: 12px; line-height: 1.5; }
+#panoView .pano-top { top: var(--pano-inset); right: var(--pano-inset); gap: 6px; }
+
+#panoView .pano-controls {
+  position: static;
+  display: flex;
+  align-items: center;
+  justify-content: start;
+  flex: none;
+  flex-wrap: nowrap;
+  max-width: 100%;
+  gap: 2px;
+  margin: 0;
+  padding: 3px;
+  border: 1px solid var(--pano-edge);
+  border-radius: 12px;
+  background: var(--pano-glass);
+  box-shadow: 0 7px 24px rgba(8, 11, 24, .24);
+  pointer-events: auto;
+}
+
+#panoView .pano-top button,
+#panoView .pano-controls button,
+#panoView .bar-actions :is(button, a) {
+  min-width: 36px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 9px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--pano-ivory);
+  background: transparent;
+  font: 600 12px/1.25 var(--sans, sans-serif);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+#panoView .pano-top button { background: var(--pano-glass); border-color: var(--pano-edge); }
+#panoView [data-vr="-1"] svg { transform: rotate(180deg); }
+#panoView .pano-controls [data-act="vr-auto"] { margin-left: 2px; }
+#panoView [data-act="vr-auto"] i { width: 6px; height: 6px; flex: none; border-radius: 50%; border: 1px solid currentColor; }
+#panoView .pano-controls [data-act="vr-auto"][aria-pressed="true"] { color: #231e31; background: var(--pano-gold); }
+#panoView [data-act="vr-auto"][aria-pressed="true"] i { background: #795320; }
+#panoView .pano-controls button:disabled { opacity: .42; cursor: default; }
+
+@media (hover: hover) {
+  #panoView .pano-controls button:enabled:hover,
+  #panoView .pano-top button:hover,
+  #panoView .bar-actions :is(button, a):hover {
+    color: #fff;
+    background: #3a405e;
+  }
+  #panoView .pano-controls [data-act="vr-auto"][aria-pressed="true"]:hover { color: #231e31; background: #ffe5a0; }
+}
+
+#panoView .vr-camera { user-select: none; transition: opacity .36s ease; }
+#panoView .vr-camera.loading { pointer-events: none; }
+#panoView .vr-room img { max-width: none; pointer-events: none; }
+#panoView .vr-dial {
+  top: var(--pano-inset);
+  left: var(--pano-inset);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: auto;
+  height: 34px;
+  padding: 3px 10px 3px 4px;
+  border: 1px solid var(--pano-edge);
+  border-radius: 20px;
+  background: var(--pano-glass);
+}
+#panoView .vr-dial::before { content: none; }
+#panoView .vr-bearing {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(255, 249, 237, .55);
+  border-radius: 50%;
+}
+#panoView .vr-bearing i { position: absolute; inset: 2px; border-radius: 50%; background: none; }
+#panoView .vr-bearing i::before,
+#panoView .vr-bearing i::after {
+  content: '';
+  position: absolute;
+  left: calc(50% - 3px);
+  top: 0;
+  width: 6px;
+  height: 50%;
+  background: var(--pano-coral);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+#panoView .vr-bearing i::after { top: 50%; transform: rotate(180deg); background: #c7cae0; }
+#panoView .vr-optics { color: #e5e4ef; font-size: 11px; white-space: nowrap; }
+#panoView .vr-optics b { margin-left: 2px; color: var(--pano-gold); font-family: var(--mono, monospace); font-variant-numeric: tabular-nums; }
+#panoView .vr-loading { inset: 50% auto auto 50%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 9px; border-radius: 20px; padding: 9px 13px; white-space: nowrap; background: var(--pano-glass); }
+#panoView .vr-loading i { width: 16px; height: 16px; border-width: 2px; border-top-color: var(--pano-gold); }
+
+#panoView .hotspot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 6px 11px;
+  border: 1px solid rgba(255, 255, 255, .9);
+  border-radius: 18px;
+  color: #202343;
+  background: #fff8e9;
+  box-shadow: 0 2px 7px rgba(16, 19, 40, .29);
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+#panoView .hotspot .ico { color: #ad4636; animation: none; }
+#panoView .hotspot:hover { background: #ffe5a3; box-shadow: 0 2px 9px rgba(16, 19, 40, .38); }
+#panoView .pano-stage.still > .scene-img { animation: pano-photo .5s ease-out both; }
+@keyframes pano-photo { from { opacity: .65; transform: scale(1.014); } to { opacity: 1; transform: scale(1); } }
+#panoView .pano-stage.locator { background: #e9edda; }
+#panoView .loc-dot { background: #a84138; color: #fff; }
+#panoView .loc-ring { border-color: #c15343; animation-iteration-count: 2; }
+#panoView .locator .pano-chip { color: #ffb198; }
+
+#panoView .pano-nav,
+#panoView .external-bar {
+  color: #f6f3fc;
+  background: var(--pano-night);
+  border-top: 1px solid rgba(255, 255, 255, .12);
+  animation: none;
+}
+#panoView .pano-nav { column-gap: 7px; row-gap: 5px; padding: 8px var(--pano-inset); }
+#panoView .nav-where { color: #fff0ca; }
+#panoView .nav-where small { color: #e7e6ee; }
+#panoView .nav-next { display: inline-flex; align-items: center; flex-wrap: wrap; min-width: 0; max-width: 100%; }
+#panoView .nav-next > span { flex: none; color: #cfccdf; font-size: 11px; }
+#panoView .pano-nav button,
+#panoView .bar-actions :is(button, a) { min-height: 30px; flex: none; white-space: nowrap; border: 1px solid var(--pano-edge); border-radius: 7px; background: rgba(255, 255, 255, .055); }
+#panoView .pano-nav button:enabled:hover { color: #fff; background: #3a405e; }
+#panoView .nav-tour b { color: var(--pano-gold); font-family: var(--mono, monospace); white-space: nowrap; }
+#panoView .external-bar { padding: 8px var(--pano-inset); gap: 7px; }
+#panoView .external-bar > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+#panoView .bar-actions { flex: none; gap: 6px; }
+#panoView .external-pano iframe { min-height: 0; background: #f4f2f5; }
+
+body[data-tab="pano"] .pano-side-tools .scope.active { background: #393b6b; border-color: #393b6b; color: #fff; }
+body[data-tab="pano"] .scene-row.active { background: #f2eff8; box-shadow: inset 3px 0 0 #da7967; }
+body[data-tab="pano"] .scene-row .row-img,
+body[data-tab="pano"] .scene-row .row-thumb { flex: none; width: 54px; height: 42px; border-radius: 8px; }
+body[data-tab="pano"] .scene-row .row-thumb { color: #68505e; background: #f8ece6; }
+body[data-tab="pano"] .scene-row .row-thumb.indoor { color: #5c497d; background: #ede8f5; }
+body[data-tab="pano"] .scene-row .row-thumb.aerial { color: #3f6783; background: #e4eff7; }
+body[data-tab="pano"] .pano-filter { background: #efedf7; color: #343455; }
+body[data-tab="pano"] .pano-filter button { color: #514581; }
+body[data-tab="pano"] .pano-survey { background: #faf8f4; border-color: #e7e1d8; }
+body[data-tab="pano"] .tour-card:is(.active, :hover) { border-color: #9785aa; background: #f4eff8; }
+body[data-tab="pano"] .tour-card strong,
+body[data-tab="pano"] .pano-survey b { color: #353552; }
+
+@container panorama (max-width: 730px) {
+  #panoView .pano-bottom { align-items: start; flex-direction: column; gap: 9px; }
+  #panoView .pano-controls { align-self: start; }
+  #panoView .pano-title strong { font-size: clamp(22px, 4.7cqw, 30px); }
+  #panoView .nav-next { flex-basis: 100%; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; padding: 2px 1px; border: 0; }
+  #panoView .pano-nav { padding-top: 6px; padding-bottom: 5px; }
+}
+
+@container panorama (max-width: 450px) {
+  #panoView .pano-controls button { min-width: 34px; min-height: 35px; padding: 5px 7px; }
+  #panoView .pano-top { gap: 4px; }
+  #panoView .vr-dial { height: 32px; }
+  #panoView .pano-nav { font-size: 11px; }
+  #panoView .pano-nav button { font-size: 11px; min-height: 29px; }
+  #panoView .nav-tour { padding-left: 0; border: 0; }
+  #panoView .external-bar { align-items: start; flex-wrap: wrap; }
+  #panoView .pano-hint { font-size: 11px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #panoView *, #panoView *::before, #panoView *::after { animation: none !important; transition: none !important; }
+  #panoView .loc-ring { display: none; }
+}

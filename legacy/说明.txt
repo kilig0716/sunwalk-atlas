@@ -1,0 +1,2 @@
+﻿这三个 Node.js 脚本是早期版本的测试，依赖已移除的高德图层和旧界面，未随 2026-11-10 版本维护。
+当前请使用工程根目录的 verify_browser.py 和 verify-geometry.py。

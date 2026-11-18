@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>原图对照核对</title>
+<style>
+body{margin:0;background:#222;font:12px system-ui}
+#bar{position:fixed;top:0;left:0;right:0;z-index:5;background:#111;color:#eee;padding:6px 10px;display:flex;gap:14px;align-items:center}
+#wrap{position:relative;width:2048px;height:1568px;margin-top:34px;transform-origin:0 0}
+#wrap img,#wrap svg{position:absolute;left:0;top:0;width:2048px}
+#plan{height:1568px}
+</style></head><body>
+<div id="bar">
+ <label><input type="checkbox" id="cPlan" checked> 原图</label>
+ <label><input type="checkbox" id="cRoad" checked> 路网</label>
+ <label><input type="checkbox" id="cBld" checked> 建筑</label>
+ <label><input type="checkbox" id="cLbl"> 名称</label>
+ <label><input type="checkbox" id="cNode"> 节点</label>
+ 缩放 <input type="range" id="zoom" min="0.3" max="1.5" step="0.05" value="0.62">
+ <span id="info"></span>
+</div>
+<div id="wrap">
+ <img id="plan" src="../dist/assets/school-plan.jpg" alt="">
+ <svg id="ov" viewBox="0 0 2048 1568" height="1568"></svg>
+</div>
+<script src="../dist/assets/atlas-data.js"></script>
+<script>
+const A=window.CAMPUS_ATLAS,ov=document.getElementById('ov'),NS='http://www.w3.org/2000/svg';
+const g=n=>{const e=document.createElementNS(NS,'g');e.id=n;ov.appendChild(e);return e};
+const add=(p,t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e};
+const gB=g('b'),gR=g('r'),gN=g('n'),gL=g('l');
+for(const s of A.structures)add(gB,'polygon',{points:s.polygon.map(p=>p.join(',')).join(' '),fill:'rgba(0,90,255,.18)',stroke:'#0050ff','stroke-width':2});
+for(const a of A.areas||[])add(gB,'polygon',{points:a.polygon.map(p=>p.join(',')).join(' '),fill:'none',stroke:'#00a050','stroke-width':1.5,'stroke-dasharray':'4 3'});
+const col={campus:'#ff1744',skybridge:'#00b0ff',outside:'#ff9100',gate:'#aa00ff'};
+for(const e of A.edges){const a=A.nodes[e.a],b=A.nodes[e.b];
+ add(gR,'line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:e.kind==='access'?'#7c4dff':col[e.role]||'#f00','stroke-width':e.kind==='access'?2:4,'stroke-dasharray':e.kind==='access'?'4 3':'' ,opacity:.85}).appendChild(Object.assign(document.createElementNS(NS,'title'),{textContent:e.name}));}
+for(const k in A.nodes){const p=A.nodes[k];add(gN,'circle',{cx:p[0],cy:p[1],r:3,fill:'#fff',stroke:'#000'});}
+for(const p of A.places){add(gL,'circle',{cx:p.x,cy:p.y,r:4,fill:'#ff0'});const t=add(gL,'text',{x:p.x,y:p.y-6,'font-size':13,'text-anchor':'middle',fill:'#000',stroke:'#fff','stroke-width':3,'paint-order':'stroke'});t.textContent=p.name;}
+const bind=(id,el)=>{const c=document.getElementById(id);const f=()=>el.style.display=c.checked?'':'none';c.onchange=f;f()};
+bind('cPlan',document.getElementById('plan'));bind('cRoad',gR);bind('cBld',gB);bind('cLbl',gL);bind('cNode',gN);
+const z=document.getElementById('zoom'),w=document.getElementById('wrap');const fz=()=>w.style.transform=`scale(${z.value})`;z.oninput=fz;fz();
+ov.addEventListener('mousemove',ev=>{const r=ov.getBoundingClientRect();const s=2048/r.width;document.getElementById('info').textContent=`x ${Math.round((ev.clientX-r.left)*s)}  y ${Math.round((ev.clientY-r.top)*s)}`});
+document.getElementById('info').textContent=`${A.places.length} 处 · ${Object.keys(A.nodes).length} 节点 · ${A.edges.length} 边`;
+</script></body></html>

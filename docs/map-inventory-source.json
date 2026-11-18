@@ -1,0 +1,571 @@
+{
+  "authority": "原图逐项核对（2026-11-09 复核：逐块网格放大），名称以原图为准并以 720 云场景名校对字迹；通行以用户现场说明优先",
+  "previous_places": [
+    {
+      "id": "east-1",
+      "name": "东1公寓"
+    },
+    {
+      "id": "east-2",
+      "name": "东2公寓"
+    },
+    {
+      "id": "east-4",
+      "name": "东4公寓"
+    },
+    {
+      "id": "east-5",
+      "name": "东5公寓"
+    },
+    {
+      "id": "east-6",
+      "name": "东6公寓"
+    },
+    {
+      "id": "east-7",
+      "name": "东7公寓"
+    },
+    {
+      "id": "east-8",
+      "name": "东8公寓"
+    },
+    {
+      "id": "east-9",
+      "name": "东9公寓"
+    },
+    {
+      "id": "east-10",
+      "name": "东10公寓"
+    },
+    {
+      "id": "east-11",
+      "name": "东11公寓"
+    },
+    {
+      "id": "east-12",
+      "name": "东12公寓"
+    },
+    {
+      "id": "east-13",
+      "name": "东13公寓"
+    },
+    {
+      "id": "east-14",
+      "name": "东14公寓"
+    },
+    {
+      "id": "east-15",
+      "name": "东15公寓"
+    },
+    {
+      "id": "east-16",
+      "name": "东16公寓"
+    },
+    {
+      "id": "east-17",
+      "name": "东17公寓"
+    },
+    {
+      "id": "east-18",
+      "name": "东18公寓"
+    },
+    {
+      "id": "west-1",
+      "name": "西1公寓"
+    },
+    {
+      "id": "west-2",
+      "name": "西2公寓"
+    },
+    {
+      "id": "west-3",
+      "name": "西3公寓"
+    },
+    {
+      "id": "west-4",
+      "name": "西4公寓"
+    },
+    {
+      "id": "west-5",
+      "name": "西5公寓"
+    },
+    {
+      "id": "west-6",
+      "name": "西6公寓"
+    },
+    {
+      "id": "west-7",
+      "name": "西7公寓"
+    },
+    {
+      "id": "west-8",
+      "name": "西8公寓"
+    },
+    {
+      "id": "west-10",
+      "name": "西10公寓"
+    },
+    {
+      "id": "west-11",
+      "name": "西11公寓"
+    },
+    {
+      "id": "west-12",
+      "name": "西12公寓"
+    },
+    {
+      "id": "west-13",
+      "name": "西13公寓"
+    },
+    {
+      "id": "west-14",
+      "name": "西14公寓"
+    },
+    {
+      "id": "west-15",
+      "name": "西15公寓"
+    },
+    {
+      "id": "west-16",
+      "name": "西16公寓"
+    },
+    {
+      "id": "west-17",
+      "name": "西17公寓"
+    },
+    {
+      "id": "intl-dorm",
+      "name": "留学生公寓"
+    },
+    {
+      "id": "staff-1",
+      "name": "1号教师公寓"
+    },
+    {
+      "id": "staff-2",
+      "name": "2号教师公寓"
+    },
+    {
+      "id": "staff-3",
+      "name": "3号教师公寓"
+    },
+    {
+      "id": "staff-4",
+      "name": "4号教师公寓"
+    },
+    {
+      "id": "staff-5",
+      "name": "5号教师公寓"
+    },
+    {
+      "id": "gate",
+      "name": "东区北门"
+    },
+    {
+      "id": "gate-south",
+      "name": "东区南门"
+    },
+    {
+      "id": "gate-small",
+      "name": "东区小南门"
+    },
+    {
+      "id": "library",
+      "name": "东区图书馆"
+    },
+    {
+      "id": "tech",
+      "name": "科技楼"
+    },
+    {
+      "id": "gym",
+      "name": "东区体育馆"
+    },
+    {
+      "id": "track",
+      "name": "东区田径场"
+    },
+    {
+      "id": "dining",
+      "name": "东区餐饮中心"
+    },
+    {
+      "id": "garden",
+      "name": "诒趣园"
+    },
+    {
+      "id": "conf",
+      "name": "会议中心（钟塔）"
+    },
+    {
+      "id": "clinic",
+      "name": "医务所"
+    },
+    {
+      "id": "guest",
+      "name": "西译宾馆"
+    },
+    {
+      "id": "e-ball",
+      "name": "东区篮球场"
+    },
+    {
+      "id": "e-tennis",
+      "name": "东区网球场"
+    },
+    {
+      "id": "foreign",
+      "name": "外教楼"
+    },
+    {
+      "id": "zhongnan",
+      "name": "终南学社"
+    },
+    {
+      "id": "e-teach6",
+      "name": "东区6号教学楼"
+    },
+    {
+      "id": "e-teach7",
+      "name": "东区7号教学楼"
+    },
+    {
+      "id": "e-teach8",
+      "name": "东区8号教学楼"
+    },
+    {
+      "id": "e-teach9",
+      "name": "东区9号教学楼"
+    },
+    {
+      "id": "e-teach10",
+      "name": "东区10号教学楼"
+    },
+    {
+      "id": "e-train1",
+      "name": "东区1号实训楼"
+    },
+    {
+      "id": "e-train2",
+      "name": "东区2号实训楼"
+    },
+    {
+      "id": "e-train3",
+      "name": "东区3号实训楼"
+    },
+    {
+      "id": "e-train4",
+      "name": "东区4号实训楼"
+    },
+    {
+      "id": "e-office2",
+      "name": "东区2号综合楼"
+    },
+    {
+      "id": "e-office3",
+      "name": "东区3号综合楼"
+    },
+    {
+      "id": "e-office4",
+      "name": "东区4号综合楼"
+    },
+    {
+      "id": "e-office5",
+      "name": "东区5号综合楼"
+    },
+    {
+      "id": "e-office6",
+      "name": "东区6号综合楼"
+    },
+    {
+      "id": "e-office7",
+      "name": "东区7号综合楼"
+    },
+    {
+      "id": "west",
+      "name": "西区1号教学楼"
+    },
+    {
+      "id": "west-gate",
+      "name": "西区正门"
+    },
+    {
+      "id": "west-lib",
+      "name": "西区图书馆"
+    },
+    {
+      "id": "west-dining",
+      "name": "西区餐饮中心（诒品坊）"
+    },
+    {
+      "id": "w-teach2",
+      "name": "西区2号教学楼"
+    },
+    {
+      "id": "w-teach3",
+      "name": "西区3号教学楼"
+    },
+    {
+      "id": "w-teach4",
+      "name": "西区4号教学楼"
+    },
+    {
+      "id": "w-teach5",
+      "name": "西区5号教学楼"
+    },
+    {
+      "id": "w-train5",
+      "name": "西区5号实训楼"
+    },
+    {
+      "id": "w-office8",
+      "name": "西区8号综合楼"
+    },
+    {
+      "id": "w-gym",
+      "name": "西区健身馆"
+    },
+    {
+      "id": "w-ball",
+      "name": "西区篮球场"
+    },
+    {
+      "id": "w-tennis",
+      "name": "西区网球场"
+    },
+    {
+      "id": "w-golf",
+      "name": "高尔夫球训练场"
+    },
+    {
+      "id": "w-square",
+      "name": "诒英广场"
+    },
+    {
+      "id": "express",
+      "name": "西区快递站"
+    },
+    {
+      "id": "skybridge",
+      "name": "西译天渡"
+    }
+  ],
+  "missing_places": [
+    {
+      "id": "e-dining-jian",
+      "name": "诒俭餐厅"
+    },
+    {
+      "id": "e-startup-street",
+      "name": "东区创新创业街区"
+    },
+    {
+      "id": "e-youth-league",
+      "name": "团委"
+    },
+    {
+      "id": "e-express",
+      "name": "东区快递站"
+    },
+    {
+      "id": "e-guard-north",
+      "name": "北门门卫室"
+    },
+    {
+      "id": "e-garage-north",
+      "name": "车库（北侧）"
+    },
+    {
+      "id": "e-garage-south",
+      "name": "车库（南侧）"
+    },
+    {
+      "id": "e-infrastructure-office",
+      "name": "基建处"
+    },
+    {
+      "id": "e-student-affairs",
+      "name": "学生工作部（处）、武装部"
+    },
+    {
+      "id": "e-shop",
+      "name": "商店"
+    },
+    {
+      "id": "e-dining-shan",
+      "name": "诒善餐厅"
+    },
+    {
+      "id": "e-engineering-lab",
+      "name": "工程实验室"
+    },
+    {
+      "id": "e-guard-small",
+      "name": "小南门门卫室"
+    },
+    {
+      "id": "e-pavilion-zhen",
+      "name": "诒真亭"
+    },
+    {
+      "id": "e-garden-xin",
+      "name": "诒馨园"
+    },
+    {
+      "id": "e-flag-platform",
+      "name": "国旗台"
+    },
+    {
+      "id": "e-garden-qing",
+      "name": "诒清园"
+    },
+    {
+      "id": "e-garden-xiu",
+      "name": "诒秀园"
+    },
+    {
+      "id": "e-pavilion-mei",
+      "name": "诒美亭"
+    },
+    {
+      "id": "e-yard-xian",
+      "name": "诒贤院"
+    },
+    {
+      "id": "e-pavilion-cui",
+      "name": "诒萃亭"
+    },
+    {
+      "id": "e-bridge-xiang",
+      "name": "诒祥桥"
+    },
+    {
+      "id": "e-bridge-du",
+      "name": "诒渡桥"
+    },
+    {
+      "id": "e-bridge-tong",
+      "name": "诒通桥"
+    },
+    {
+      "id": "e-bridge-rui",
+      "name": "诒瑞桥"
+    },
+    {
+      "id": "e-bridge-an",
+      "name": "诒安桥"
+    },
+    {
+      "id": "e-ball-south",
+      "name": "东区篮球场（南片）"
+    },
+    {
+      "id": "w-yibo",
+      "name": "诒博楼"
+    },
+    {
+      "id": "w-carpentry",
+      "name": "木工班"
+    },
+    {
+      "id": "w-greenhouse",
+      "name": "花房"
+    },
+    {
+      "id": "w-power",
+      "name": "供电中心"
+    },
+    {
+      "id": "w-parking-north",
+      "name": "停车场（西区北侧）"
+    },
+    {
+      "id": "w-pingpong",
+      "name": "乒乓球场"
+    },
+    {
+      "id": "w-startup-street",
+      "name": "西区创新创业街区"
+    },
+    {
+      "id": "w-jing-forest",
+      "name": "诒静林"
+    },
+    {
+      "id": "w-feng-garden",
+      "name": "诒丰园"
+    },
+    {
+      "id": "w-fang-garden",
+      "name": "诒芳园"
+    },
+    {
+      "id": "w-leisure-square",
+      "name": "休闲广场"
+    },
+    {
+      "id": "w-gate-plaza",
+      "name": "西区正门内广场"
+    },
+    {
+      "id": "w-green-belt",
+      "name": "绿化林带"
+    },
+    {
+      "id": "e-plaza-hua",
+      "name": "诒华广场"
+    },
+    {
+      "id": "e-plaza-ming",
+      "name": "诒鸣广场"
+    },
+    {
+      "id": "w-gate-guard",
+      "name": "西区正门门卫室"
+    }
+  ],
+  "named_roads": [
+    "诒文大道",
+    "诒强路",
+    "诒德大道",
+    "诒和路",
+    "诒雅路",
+    "诒才路",
+    "诒颖路",
+    "诒滨路",
+    "诒萌路",
+    "太乙宫正街校外步道",
+    "西译天渡",
+    "诒祥桥",
+    "诒渡桥",
+    "诒通桥",
+    "诒瑞桥",
+    "诒安桥"
+  ],
+  "required_links": [
+    "西区北侧服务路连接口",
+    "诒趣园北侧广场延伸",
+    "图书馆西侧窄路",
+    "西区北侧服务路",
+    "诒博楼南侧小路",
+    "西区公寓西侧支路",
+    "西区宿舍横向通道",
+    "诒芳园弯路",
+    "河岸南部连廊",
+    "诒清园南侧广场",
+    "八号楼东侧庭院",
+    "教师实验区中间巷",
+    "体育馆外围步道",
+    "车库庭院步道",
+    "二号楼东侧通道",
+    "一号楼东侧通道",
+    "网球场北侧步道",
+    "东南片区外围步道",
+    "西区南侧边界路",
+    "西15—14公寓间小径",
+    "东13—14公寓间通道",
+    "东14—15公寓间通道",
+    "东17—18公寓间通道",
+    "诒鸣广场环路"
+  ]
+}
