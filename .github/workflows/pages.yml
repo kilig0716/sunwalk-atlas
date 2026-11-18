@@ -1,8 +1,13 @@
-# 每次推送到 main，就把 dist/ 发布到 GitHub Pages（仓库 Settings → Pages 的 Source 选 GitHub Actions）。
+# 发布 dist/ 到 GitHub Pages（仓库 Settings → Pages 的 Source 选 GitHub Actions）。
+# 推送到 main 时发布一次；另外每小时整点后 17 分发布一次，发布前先用 weather_feed.py
+# 从中国天气网取最新的逐小时预报，写进网页用的天气快照。取不到时沿用仓库里的旧快照，照常发布。
+# 新快照只进入发布的网页，不提交回仓库。
 name: 发布到 GitHub Pages
 on:
   push:
     branches: [main]
+  schedule:
+    - cron: '17 * * * *'
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,6 +24,13 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: 更新天气快照
+        continue-on-error: true
+        timeout-minutes: 2
+        run: python -B weather_feed.py
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
