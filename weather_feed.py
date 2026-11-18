@@ -55,8 +55,10 @@ def _text(value, limit=12):
 def parse(html, now=None):
     """Turn the forecast page into {place, source, page, fetchedAt, now, hours}.
 
-    The page only gives clock hours ("20", "21", …) for the coming 24 hours, so each one is
-    dated from the moment of reading: the first is the next time that hour comes round.
+    The page only gives clock hours ("20", "21", …), so each one is dated from the moment of
+    reading.  The list starts at the hour the forecast was issued, which can be up to a day ago:
+    at 03:00 the page may still show the one issued at 20:00 the evening before.  So the first
+    hour is the latest time that hour came round, but not more than 3 hours ahead.
     """
     now = now or datetime.now(CST)
     rows = _var(html, 'forecast_1h')
@@ -73,7 +75,9 @@ def parse(html, now=None):
             continue
         if stamp is None:
             stamp = now.replace(hour=hour, minute=0, second=0, microsecond=0)
-            if stamp < now - timedelta(hours=3):
+            if stamp > now + timedelta(hours=3):
+                stamp -= timedelta(days=1)
+            elif stamp <= now + timedelta(hours=3) - timedelta(days=1):
                 stamp += timedelta(days=1)
         else:
             stamp += timedelta(hours=1)

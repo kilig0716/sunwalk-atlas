@@ -31,6 +31,14 @@ class WeatherFeed(unittest.TestCase):
         first = datetime.fromtimestamp(late['hours'][0]['t'] / 1000, W.CST)
         self.assertEqual((first.day, first.hour), (12, 1))
 
+    def test_forecast_issued_last_evening_is_not_moved_to_tonight(self):
+        # at 03:19 the page still shows the forecast issued at 20:00 the evening before
+        rows = [{"time": f"{(20 + i) % 24:02d}", "weatherCode": "n00", "weather": "晴", "temp": 0} for i in range(24)]
+        page = '<script>var forecast_1h = ' + json.dumps(rows, ensure_ascii=False) + ';</script>'
+        data = W.parse(page, datetime(2026, 11, 19, 3, 19, tzinfo=W.CST))
+        first, last = (datetime.fromtimestamp(h['t'] / 1000, W.CST) for h in (data['hours'][0], data['hours'][-1]))
+        self.assertEqual([(first.day, first.hour), (last.day, last.hour)], [(18, 20), (19, 19)])
+
     def test_codes_text_and_observation(self):
         data = W.parse(PAGE, NOW)
         self.assertEqual([h['code'] for h in data['hours']], ['02', '02', '01', '00', '07'])
