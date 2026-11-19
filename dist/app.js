@@ -100,9 +100,14 @@ function wxCell(h,cur){const k=Weather.kindOf(h.code,h.text)||'cloudy',K=Weather
   return '<button class="wx-cell'+(h.t===cur?' on':'')+(h.night?' night':'')+(h.hour===0?' newday':'')+'" data-wx-t="'+h.t+'" title="'+esc(String(h.hour).padStart(2,'0')+':00 '+(h.text||K.label)+' '+temp+(h.windD?' '+h.windD+' '+h.windL:'')+' · 日照约 '+Math.round(K.sun*100)+'%')+'"><small>'+String(h.hour).padStart(2,'0')+'时</small>'+Weather.icon(k,h.night,20)+'<b>'+temp+'</b><i style="--sun:'+K.sun+'"></i></button>';}
 function wxNote(){const s=routeSky();return Weather.icon(s.kind,dark(),15)+'<span>'+esc(Routing.weekdays[state.day-1]+' '+timeLabel(state.hour)+' · '+skyNote(s))+'</span>';}
 function skyPick(){return '<div class="sky-pick" role="group" aria-label="天气设定">'+[['auto','按预报'],['clear','晴'],['cloudy','多云'],['overcast','阴'],['rain','雨']].map(([k,l])=>'<button data-sky="'+k+'" aria-pressed="'+(state.sky===k)+'">'+(k==='auto'?'':Weather.icon(k,false,14))+l+'</button>').join('')+'</div>';}
+// opened through the local server (启动校园导览.cmd), or as a published copy (GitHub Pages, the team server) that has no weather service of its own
+const localRun=/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)||location.protocol==='file:';
+const wxStamp=d=>d?new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(d.fetchedAt)):'';
+function wxEmpty(){return localRun?'没有取到天气预报，路线先按晴天估算。联网后用「启动校园导览.cmd」打开会自动读取；也可以在下面手动选天气。':'暂时没有取到最新的天气预报，路线先按晴天估算。网页会定时重新读取，也可以在下面手动选天气。';}
+function wxFrom(d){return Weather.source==='live'?'':localRun?'（没有连上本机的天气服务，显示的是上次保存的预报）':'（网页版定时从中国天气网读取）';}
 function wxBlock(){const d=Weather.data,cur=Weather.at(state.day,state.hour)?.t;
   return '<div class="wx-block"><div class="control-line"><span>天气</span><button class="wx-src" data-act="wx">'+(d?esc('太乙宫街道 · '+(d.now?.time?d.now.time+' 实况 ':'')+(d.now?.text||'')+(Number.isFinite(d.now?.temp)?' '+d.now.temp+'℃':'')):'天气说明')+' ›</button></div>'+
-    (d?'<div class="wx-strip" id="wxStrip" aria-label="未来 24 小时逐小时预报，点某个小时按那一刻规划">'+d.hours.map(h=>wxCell(h,cur)).join('')+'</div>':'<p class="wx-empty">'+Weather.icon('cloudy',false,16)+'<span>没有取到天气预报，路线先按晴天估算。联网后用「启动校园导览.cmd」打开会自动读取；也可以在下面手动选天气。</span></p>')+
+    (d?'<div class="wx-strip" id="wxStrip" aria-label="未来 24 小时逐小时预报，点某个小时按那一刻规划">'+d.hours.map(h=>wxCell(h,cur)).join('')+'</div>':'<p class="wx-empty">'+Weather.icon('cloudy',false,16)+'<span>'+wxEmpty()+'</span></p>')+
     skyPick()+'<p class="wx-note" id="wxNote">'+wxNote()+'</p>'+sunPick()+'<p class="sun-line">'+esc(sunLine())+'</p></div>';}
 function syncWx(){const note=$('wxNote');if(note)note.innerHTML=wxNote();const strip=$('wxStrip');if(!strip)return;
   const cur=Weather.at(state.day,state.hour)?.t;strip.querySelectorAll('.wx-cell').forEach(b=>b.classList.toggle('on',+b.dataset.wxT===cur));
@@ -127,11 +132,11 @@ function setSky(kind){if(!(kind==='auto'||Weather.KINDS[kind]))return;state.sky=
   if($('modal').open&&$('modalContent').querySelector('.wx-dialog'))weatherDialog();
   toast(kind==='auto'?'天气跟随预报。':'已按「'+Weather.KINDS[kind].label+'」估算日照。');}
 function weatherDialog(){const d=Weather.data,h=nowHour(),s=nowSky(),isDark=!Routing.daylight(atlas,h),cur=Weather.at(state.day,state.hour)?.t;
-  const stamp=d?new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(d.fetchedAt)):'';
+  const stamp=wxStamp(d);
   dialog('校园天气','<div class="wx-dialog">'+(d?'<div class="wx-now" data-sky="'+s.kind+'">'+Weather.icon(s.kind,isDark,52)+'<div><strong>'+esc(skyText(s))+'</strong><span>'+esc(d.place)+(d.now?.time?' · '+esc(d.now.time)+' 实况':'')+(Number.isFinite(d.now?.humidity)?' · 湿度 '+d.now.humidity+'%':'')+(d.now?.wind?' · '+esc(d.now.wind):'')+(Number.isFinite(d.now?.hi)&&Number.isFinite(d.now?.lo)?'<br>今天 '+d.now.lo+' ~ '+d.now.hi+'℃':'')+'</span></div></div><p class="wx-say">'+icon('leaf',14)+esc(skyShort(s,isDark))+'。</p><h3>未来 24 小时</h3><div class="wx-hours">'+d.hours.map(x=>wxCell(x,cur)).join('')+'</div><p class="caption">点某个小时，就按那一刻的天气和时间规划路线。每格下面的黄条是日照强度。</p>'
-      :'<p class="wx-empty">'+Weather.icon('cloudy',false,16)+'<span>现在没有取到天气预报。预报由本机的小服务读取：联网后双击「启动校园导览.cmd」打开页面即可。取不到时路线按晴天估算，你也可以手动选天气。</span></p>')+
+      :'<p class="wx-empty">'+Weather.icon('cloudy',false,16)+'<span>'+(localRun?'现在没有取到天气预报。预报由本机的小服务读取：联网后双击「启动校园导览.cmd」打开页面即可。取不到时路线按晴天估算，你也可以手动选天气。':'现在没有取到最新的天气预报，路线先按晴天估算。网页会定时从中国天气网重新读取，你也可以手动选天气。')+'</span></p>')+
     '<h3>手动设定天气</h3>'+skyPick()+'<h3>太阳按哪一天算</h3>'+sunPick()+'<p class="caption">'+esc(sunLine())+'。“今天”按当天日期计算太阳方位、日出日落和楼影；“夏季”是 720 云实景拍摄季节的开学日情景。</p>'+'<h3>天气怎样影响路线</h3><p>林荫有没有用，先看有没有太阳。路线里每段路的日照 = 步行时长 ×（1 − 遮阴率）× 天气的日照比例：</p><div class="wx-factors">'+Object.entries(Weather.KINDS).map(([k,v])=>'<span>'+Weather.icon(k,false,16)+v.label+' <b>'+Math.round(v.sun*100)+'%</b></span>').join('')+'</div><p>阴天、雾天日照弱，推荐直接走最近的路；雨雪天没有直射日照，只比较距离；气温低于 12℃ 时不建议为荫凉绕路；晴热（28℃ 以上）时推荐少晒的走法。</p><p class="caption">日照比例和温度界线是团队的估计，不是测量值。太阳方位、日出日落和楼影按'+esc(sunLabel())+'计算，天气只调整日照强弱。林荫是夏季满叶时的测量值，落叶季实际会更晒。</p>'+
-    '<p class="caption">数据：'+sourceLink(d?.page||'https://forecast.weather.com.cn/town/weather1dn/101110102013.shtml','中国天气网 · 长安区太乙宫街道')+'（数据来源：中央气象台）。'+(d?'读取于 '+esc(stamp)+(Weather.source==='snapshot'?'（当前显示的是上次保存的预报）':'')+'。':'')+'本页不向天气网发送任何个人信息。</p><div class="small-actions"><button class="solid" data-act="plan-now">'+icon('route',14)+'按现在的天气规划</button><button data-act="wx-refresh">重新读取预报</button></div></div>','CAMPUS WEATHER');
+    '<p class="caption">数据：'+sourceLink(d?.page||'https://forecast.weather.com.cn/town/weather1dn/101110102013.shtml','中国天气网 · 长安区太乙宫街道')+'（数据来源：中央气象台）。'+(d?'读取于 '+esc(stamp)+esc(wxFrom(d))+'。':'')+'本页不向天气网发送任何个人信息。</p><div class="small-actions"><button class="solid" data-act="plan-now">'+icon('route',14)+'按现在的天气规划</button><button data-act="wx-refresh">重新读取预报</button></div></div>','CAMPUS WEATHER');
 }
 function policyText(){return late()?'21:00 后所有校门只进不出；跨区只走校内天渡。':Routing.outsideAllowed(atlas,state.day)?'可走校外；地面进入西区仅经正门。':'禁止出校；跨区只走校内天渡。';}
 function accessLegend(){return '<span><i class="legend-line campus"></i>校内</span><span><i class="legend-line bridge"></i>天渡</span><span><i class="legend-line '+(canExit()?'outside':'closed')+'"></i>'+(late()?'校门只进不出':'校外'+(canExit()?'可走':'禁行'))+'</span>';}
@@ -1380,7 +1385,7 @@ const actions={
   'sheet':()=>setSheetOpen(!document.body.classList.contains('sheet-open')),
   'reset-filters':()=>{state.query='';filterPlaces('全部','全校');},
   'share-place':sharePlace,'share-route':shareRoute,'wx':weatherDialog,
-  'wx-refresh':()=>{toast('正在读取天气预报…');Weather.load().then(d=>{toast(d?(Weather.source==='live'?'天气预报已更新。':'没有连上天气服务，显示的是上次保存的预报。'):'没有取到天气预报，路线按晴天估算。');if($('modal').open&&$('modalContent').querySelector('.wx-dialog'))weatherDialog();});},
+  'wx-refresh':()=>{toast('正在读取天气预报…');Weather.load().then(d=>{toast(d?(Weather.source==='live'?'天气预报已更新。':localRun?'没有连上本机的天气服务，显示的是 '+wxStamp(d)+' 保存的预报。':'已是最新发布的预报（'+wxStamp(d)+' 读取）。'):'没有取到天气预报，路线按晴天估算。');if($('modal').open&&$('modalContent').querySelector('.wx-dialog'))weatherDialog();});},
   'plan-now':()=>{dismiss();state.sky='auto';state.day=Routing.today();state.hour=Math.round(nowHour()*2)/2%24;setTab('route');},
   'shade-now':()=>{const h=nowHour(),[lo,hi]=shadeRange();state.shadeHour=Math.max(lo,Math.min(hi,Math.round(h*2)/2));if(!state.shade)actions['shade-layer']();else{exploreSide();refreshAccess();renderPins();}},
   'hour-now':()=>{state.day=Routing.today();state.hour=Math.round(nowHour()*2)/2%24;updateRoute();routeSide();toast(Routing.isNight(atlas,state.hour)?'已设为现在出发：21:00 后校门只进不出，路线只走校内。':!Routing.daylight(atlas,state.hour)?'已设为现在出发：此刻没有日照，只比较距离。':'已设为今天、现在出发。');},'near-start':nearbyStart,

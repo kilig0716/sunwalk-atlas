@@ -1,7 +1,8 @@
 'use strict';
 // Weather for the campus: hourly forecast of 长安区太乙宫街道 from 中国天气网 (数据来源：中央气象台).
-// The local server (serve.py → /api/weather) reads the forecast; without it the page uses the last
-// snapshot while that still covers the present, and otherwise assumes a clear sky.
+// The local server (serve.py → /api/weather) reads the forecast. A static copy of the site (GitHub Pages, the team
+// server) has no such service: it republishes the snapshot file instead, so the page then reads the newest published
+// snapshot. A snapshot is used while it still covers the present; otherwise the page assumes a clear sky.
 const Weather = (() => {
   // `sun` is the share of direct sunlight that still reaches the ground. These are working estimates
   // chosen by the team, not measurements: change them here and every route follows.
@@ -38,6 +39,17 @@ const Weather = (() => {
     if (changed) listeners.forEach(fn => {try {fn();} catch (error) {console.error(error);}});
     return !!next;
   }
+  // the newest published snapshot (not the copy loaded with the page): a static site republishes it on a timer
+  async function latestSnapshot() {
+    try {
+      const ctl = new AbortController(), stop = setTimeout(() => ctl.abort(), 9000);
+      const r = await fetch('assets/weather-snapshot.js?t=' + Date.now(), {signal: ctl.signal, cache: 'no-store'});
+      clearTimeout(stop);
+      if (!r.ok) return null;
+      const s = await r.text(), a = s.indexOf('{'), b = s.lastIndexOf('}');
+      return a < 0 || b < a ? null : JSON.parse(s.slice(a, b + 1));
+    } catch {return null;}
+  }
   async function load() {
     try {
       const ctl = new AbortController(), stop = setTimeout(() => ctl.abort(), 9000);
@@ -48,7 +60,9 @@ const Weather = (() => {
       if (!usable(d)) throw new Error('weather stale');
       use(d, 'live');
     } catch {
-      if (!usable(data)) use(globalThis.WEATHER_SNAPSHOT, 'snapshot');
+      // keep whatever is newest and still covers the present: what we have, the newest published snapshot, the page's copy
+      const best = [data, await latestSnapshot(), globalThis.WEATHER_SNAPSHOT].filter(d => usable(d)).sort((x, y) => (y.fetchedAt || 0) - (x.fetchedAt || 0))[0];
+      if (best !== data || !best) use(best || null, best === data ? source : 'snapshot');
     }
     return data;
   }
