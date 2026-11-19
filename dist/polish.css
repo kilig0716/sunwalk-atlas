@@ -432,7 +432,8 @@ dialog[open]::backdrop { animation: sw-fade .3s ease; }
 .splash-card strong {
   background: linear-gradient(90deg, #1b2240, #4a3fb0); -webkit-background-clip: text; background-clip: text; color: transparent;
 }
-.splash-card i { background: linear-gradient(90deg, #c9bdfb, #ffbf93, #ffe08f, #9fe0cd, #c9bdfb); background-size: 200% 100%; animation: sw-bar 1s linear infinite; }
+/* two runs cover the splash (it is gone after about a second); an endless run kept repainting it, hidden, for as long as the page was open */
+.splash-card i { background: linear-gradient(90deg, #c9bdfb, #ffbf93, #ffe08f, #9fe0cd, #c9bdfb); background-size: 200% 100%; animation: sw-bar 1s linear 2; }
 
 /* ---------- 7. motion ---------- */
 @keyframes sw-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -541,8 +542,9 @@ dialog[open]::backdrop { animation: sw-fade .3s ease; }
     box-shadow: 0 -1px 0 rgba(19,27,58,.05), 0 -24px 50px -20px rgba(19,27,58,.55);
   }
   body[data-tab] .side.dragging { transition: none; }
-  .stage::after { content: ""; position: absolute; inset: 0; z-index: 600; background: rgba(15,21,48,.34); opacity: 0; pointer-events: none; transition: opacity .4s ease; }
-  body.sheet-open .stage::after { opacity: 1; pointer-events: auto; }
+  /* hidden, not just transparent, while the sheet is down: a screen-sized layer over the map costs graphics memory even when clear */
+  .stage::after { content: ""; position: absolute; inset: 0; z-index: 600; background: rgba(15,21,48,.34); opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .4s ease, visibility 0s linear .4s; }
+  body.sheet-open .stage::after { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity .4s ease; }
 
   .sheet-grip { position: sticky; top: 0; z-index: 6; display: block; height: 24px; margin: 0 -14px; padding: 0 14px; background: linear-gradient(#fff 70%, rgba(255,255,255,0)); touch-action: none; }
   .sheet-grip button { height: 24px; padding: 0; color: #8a92a8; cursor: grab; }
@@ -705,9 +707,10 @@ dialog[open]::backdrop { animation: sw-fade .3s ease; }
    ===================================================================== */
 /* The drawing under everything (about 9 000 shapes) sits on a layer of its own and keeps the picture it has, so neither a pan
    nor the labels, the route's moving dashes or a selected building's breathing outline make the browser paint it again.
-   After a zoom it is painted once more at the new size (.refresh, for two frames), so lines and text stay sharp. */
+   After a zoom it is painted once more at the new size (.refresh on the plane, for two frames), so lines and text stay sharp;
+   a long zoom out repaints it on the way too, or the browser would keep painting the whole view at the close-up's detail. */
 #mapPlane .base-map { will-change: transform; }
-#mapPlane .base-map.refresh { will-change: opacity; }
+#mapPlane.refresh .base-map, #mapPlane.moving.refresh { will-change: opacity; }
 /* while the map zooms or turns, each label is a small layer that only moves; at rest they are painted sharp again */
 #mapPlane.scaling .pin, #mapPlane.scaling .pano-pin { will-change: transform; }
 /* labels keep their size and stay upright whichever way the map is turned */
@@ -730,3 +733,42 @@ body[data-dim="2d"]:not([data-layer="geo"]) .compass:not(:disabled) { cursor: po
 body[data-layer="geo"] .map-tools .turn-btn { display: none; }
 body[data-dim="2d"]:not([data-layer="geo"]) .map-tools #zoomIn { position: relative; margin-top: 6px; }
 body[data-dim="2d"]:not([data-layer="geo"]) .map-tools #zoomIn::before { content: ""; position: absolute; left: 9px; right: 9px; top: -5px; height: 1px; background: #e2e5ee; }
+
+/* =====================================================================
+   10. The map card holds still when it is drawn again
+   ===================================================================== */
+/* app.js renderCard: the same card drawn again (live location does it about once a second) gets .calm, so its chips and rows
+   do not play their entrance again; only a newly opened card animates in. */
+#mapCard.calm :is(.fac-chip, .fac-photo, .fac-tile, .fac-depts span, .fac-where button, .fac-hits button) { animation: none; }
+
+/* =====================================================================
+   11. Phones: a flat map that fits the in-app browser's graphics memory
+   ===================================================================== */
+/* A phone browser (WeChat's above all) gives a page little graphics memory, about a few screens' worth at 3x pixels. When the flat
+   map needed more, the browser dropped whole layers while the map was pinched or turned: the header, the legend and the drawing
+   went blank, and came back when it rested. So on a phone:
+   - the drawing and its lines are one layer (two screen-sized ones before); the route, whose dashes move every frame, keeps a
+     layer of its own (empty, so free, when there is no route) so the drawing is not painted again for it, and a selected
+     building's outline stays still instead of breathing (the building outlines cannot have a layer of their own: invisible
+     as they are, the browser would paint one the size of the map for them);
+   - every label is its own small layer, so labels coming and going while the map moves never repaint the drawing;
+   - each group of buttons over the map is its own small layer: otherwise the browser lumps them, with all the clear space
+     between them, into one screen-sized layer;
+   - no glass blur behind the buttons and cards (as in 3D), and no full-screen weather layer over the flat map: at night the
+     drawing itself is dimmed instead (.night, set in applySky). */
+@media (max-width: 680px), (pointer: coarse) {
+  #mapPlane, #mapPlane.moving { will-change: transform; }
+  #mapPlane.refresh { will-change: opacity; }
+  #mapPlane .base-map, #mapPlane.refresh .base-map { will-change: auto; }
+  #mapPlane .pin, #mapPlane .pano-pin, #mapPlane .road-name, #pathOverlay { will-change: transform; }
+  #footprints polygon.marked { animation: none; }
+  .map-top-left, .map-presentation-tools, #zoneSwitch, .map-tools, #mapCard, .map-foot, .map-callout, #layerBack { will-change: transform; }
+  :is(.map-type, .zone-switch, .map-tools, .compass, .map-focus-btn, .map-callout, .place-card, .geo-card, .route-summary, .access-legend, #toast) { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  :is(.map-type, .zone-switch, .map-tools, .compass, .map-focus-btn, .place-card, .geo-card, .route-summary) { background: #fffffff2; }
+  body[data-dim="2d"] #skyFx { display: none; }
+  #mapViewport.night .base-map { filter: brightness(.86) saturate(.86); }
+}
+/* the sun's glow on the today card lies under the folded sheet on a phone: no need to keep it pulsing there */
+@media (max-width: 680px) {
+  body:not(.sheet-open) .today-sun circle:first-of-type { animation-play-state: paused; }
+}

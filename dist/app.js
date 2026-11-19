@@ -1,6 +1,6 @@
 'use strict';
 const $=id=>document.getElementById(id);
-const BUILD='20261119';   // also used by index.html
+const BUILD='20261119b';   // also used by index.html
 const atlas=window.CAMPUS_ATLAS, tour=window.CAMPUS_TOUR, geo=window.GEO_CAMPUS;
 const places=new Map(atlas.places.map(p=>[p.id,p])), scenes=new Map(tour.scenes.map(s=>[s.id,s]));
 const localPano=new Set(window.PANO_LOCAL||[]);
@@ -119,7 +119,9 @@ function updateChip(){const chip=$('wxChip');if(!chip)return;const d=Weather.dat
   chip.innerHTML=d?Weather.icon(s.kind,!Routing.daylight(atlas,h),20)+'<span><em>'+esc(s.label)+' </em>'+(Number.isFinite(s.temp)?Math.round(s.temp)+'℃':'')+'</span><small>太乙宫</small>':Weather.icon('cloudy',false,20)+'<span><em>天气</em></span>';
   chip.title=d?'校园天气：'+skyText(s)+' · '+skyShort(s,!Routing.daylight(atlas,h)):'校园天气（暂未取到预报）';}
 function applySky(){const fx=$('skyFx');if(!fx)return;const on=state.tab!=='pano'&&['atlas','official'].includes(state.map),s=viewSky();
-  fx.hidden=!on;fx.dataset.sky=s.source==='default'?'none':s.kind;fx.dataset.night=String(!is3d()&&!Routing.daylight(atlas,viewHour()));env3d();}
+  fx.hidden=!on;fx.dataset.sky=s.source==='default'?'none':s.kind;fx.dataset.night=String(!is3d()&&!Routing.daylight(atlas,viewHour()));
+  $('mapViewport').classList.toggle('night',on&&fx.dataset.night==='true');   // a phone dims the drawing itself (polish.css 11)
+  env3d();}
 function setSky(kind){if(!(kind==='auto'||Weather.KINDS[kind]))return;state.sky=kind;
   if(state.tab==='route'){updateRoute();routeSide();}else{if(state.tab==='explore'&&state.shade)exploreSide();refreshAccess();renderPins();}
   if($('modal').open&&$('modalContent').querySelector('.wx-dialog'))weatherDialog();
@@ -725,7 +727,9 @@ function measurePlane(overview=false){
   refreshAccess();
   applyTransform();
 }
-let pinScale=0,pinTurn=null,strokeScale=0,placeTimer=0,placeAt=0;
+let pinScale=0,pinTurn=null,strokeScale=0,placeTimer=0,placeAt=0,strokeTimer=0,crispScale=0;
+// a phone or tablet: the flat map is one layer there (polish.css 11), so line widths follow a zoom in steps, not every frame
+const leanMap=matchMedia('(max-width: 680px), (pointer: coarse)');
 function applyTransform(){
   const v=$('mapViewport'),vw=v.clientWidth,vh=v.clientHeight;view.rot=turnAngle(view.rot);
   // keep some of the map in the window: the box around the (possibly turned) drawing may not leave it
@@ -741,20 +745,27 @@ function applyTransform(){
   if(k!==pinScale){pinScale=k;for(const el of labels)el.style.setProperty('--counter',k);}
   if(r!==pinTurn){pinTurn=r;for(const el of labels)el.style.setProperty('--unrot',-r+'deg');$('roadNames').style.setProperty('--flip',Math.abs(r)>90?'180deg':'0deg');
     $('mapUI').style.setProperty('--rot2d',r+'deg');updateSun();}
-  if(view.scale!==strokeScale){strokeScale=view.scale;syncMapStrokes();}   // a pan leaves the line widths alone
+  if(view.scale!==strokeScale){if(leanMap.matches)strokesSoon();else{strokeScale=view.scale;syncMapStrokes();}}   // a pan leaves the line widths alone
+  if(view.scale<crispScale/2)refreshMap();   // half way out from the last sharp picture: paint it again on the way
   placeSoon();
   updateMapScale();
 }
 // While the map moves, the labels are placed again at most about nine times a second; once it rests, all of it is redone.
 function placeSoon(){if(!placeTimer)placeTimer=setTimeout(()=>{placeTimer=0;placeAt=performance.now();placePins();},Math.max(0,placeAt+110-performance.now()));}
-let crispScale=0;
+function strokesSoon(){if(!strokeTimer)strokeTimer=setTimeout(()=>{strokeTimer=0;strokeScale=view.scale;syncMapStrokes();},110);}
+// Paint the drawing again at the zoom now on screen. Its layer keeps the detail it was first painted at (will-change: transform);
+// lifting that hint for two frames (.refresh) has the browser redraw it. After a zoom in, that makes lines and text sharp again;
+// during a long zoom out it keeps the browser from painting the whole, ever larger view at the close-up's detail, which on a
+// phone ran out of graphics memory and blanked the map, the header and the legend.
+function refreshMap(){crispScale=view.scale;const plane=$('mapPlane');plane.classList.add('refresh');requestAnimationFrame(()=>requestAnimationFrame(()=>plane.classList.remove('refresh')));}
 function settleMap(){
   const plane=$('mapPlane'),img=plane.querySelector('.base-map');plane.classList.remove('moving','scaling');
   // At rest the drawing lies on whole screen pixels (a pan can end between two), so its layer is shown without blurring.
   if(!view.rot){const dpr=devicePixelRatio||1,o=$('mapViewport').getBoundingClientRect(),ox=o.left+view.x+view.scale*img.offsetLeft,oy=o.top+view.y+view.scale*img.offsetTop;
     view.x+=Math.round(ox*dpr)/dpr-ox;view.y+=Math.round(oy*dpr)/dpr-oy;plane.style.transform='translate('+view.x+'px,'+view.y+'px) scale('+view.scale+')';}
+  if(view.scale!==strokeScale){clearTimeout(strokeTimer);strokeTimer=0;strokeScale=view.scale;syncMapStrokes();}
   // after a zoom the drawing is painted once at the new size
-  if(Math.abs(view.scale/crispScale-1)>.001){crispScale=view.scale;img.classList.add('refresh');requestAnimationFrame(()=>requestAnimationFrame(()=>img.classList.remove('refresh')));}
+  if(Math.abs(view.scale/crispScale-1)>.001)refreshMap();
   renderPins();
 }
 function updateMapScale(){
@@ -848,11 +859,17 @@ function focusFaculty(id){
 }
 function clearFaculty(){state.faculty=null;if(state.tab==='explore')updatePlaceList();renderPins();renderCard();}
 let cardKey='';
+// The card is drawn again for many reasons that do not change what it shows: live location calls this on every fix (about once a
+// second on a phone). Unchanged markup is then left alone (setCard), so a row scrolled sideways stays put, and parts that did
+// change do not replay their entrance (.calm): only a new card animates in.
 function renderCard(){
   const c=$('mapCard'),key=[state.tab,state.map,state.selected,state.faculty,state.step,state.tab==='route'?state.from+'>'+state.to+'#'+state.choice:''].join('|');
+  c.classList.toggle('calm',key===cardKey);
   drawCard(c);
-  if(key!==cardKey){cardKey=key;const el=c.firstElementChild;if(el){el.classList.remove('card-enter');void el.offsetWidth;el.classList.add('card-enter');}}
+  if(key!==cardKey){cardKey=key;const el=c.firstElementChild;if(el){el.classList.remove('card-enter');void el.offsetWidth;el.classList.add('card-enter');c.__dom=c.innerHTML;}}
 }
+// write the card's markup only if it differs from what is there (and nothing else has changed the card since)
+function setCard(c,html){if(html===c.__html&&c.innerHTML===c.__dom)return false;c.innerHTML=html;c.__html=html;c.__dom=c.innerHTML;return true;}
 // a building with floor plans gets a way in: the door the outdoor route arrives at is carried over
 function indoorBtn(id,plan){if(typeof Indoor==='undefined'||!Indoor.has(id))return '';const e=plan?.edges?.at(-1),door=e?.kind==='door'&&e.door===id?e.name.slice(places.get(id).name.length):'';
   return '<button class="indoor-btn" data-indoor="'+id+'"'+(door?' data-door="'+esc(door)+'"':'')+'>'+icon('layers',14)+'楼内导航</button>';}
@@ -860,8 +877,7 @@ function drawCard(c){
   if(state.tab==='route'){
     const p=currentPlan?.choices?.[state.choice],focusAction=c.contains(document.activeElement)?document.activeElement.dataset.act:null;
     const show=html=>{
-      c.innerHTML=html;
-      if(!focusAction)return;
+      if(!setCard(c,html)||!focusAction)return;
       const action=({'begin-steps':'next-step','end-steps':'begin-steps'})[focusAction]||focusAction;
       (c.querySelector('[data-act="'+action+'"]:not(:disabled)')||c.querySelector('[data-act="begin-steps"],[data-act="route-play"]'))?.focus({preventScroll:true});
     };
@@ -899,7 +915,7 @@ function drawCard(c){
       '<div class="small-actions guide-entry"><button class="solid" data-act="begin-steps">'+icon('walk',15)+'分步导览</button><button data-act="route-play" aria-pressed="false" title="每 4 秒演示下一段">'+playIcon+'自动演示</button></div><div class="route-card-links">'+summaryLinks+'</div></section>');return;
   }
   if(state.map==='geo'&&(watch!==null||geoStatus)){
-    c.innerHTML='<div class="geo-card"><span class="section-label">LIVE LOCATION</span><h3>'+esc(fix?'我的实时位置':'设备定位')+'</h3><p>'+esc(geoStatus)+'</p>'+(fix?'<p>WGS84 · '+fix.lat.toFixed(6)+', '+fix.lon.toFixed(6)+'<br>精度约 ±'+Math.round(fix.accuracy)+' 米 · '+esc(new Date(fix.time).toLocaleTimeString('zh-CN'))+' 更新</p>':'')+'<div class="small-actions">'+(watch!==null?'<button data-act="stop-geo">停止定位</button>':'<button data-act="geo-consent">重试定位</button>')+'<button data-act="fit">返回校园</button></div></div>';return;
+    setCard(c,'<div class="geo-card"><span class="section-label">LIVE LOCATION</span><h3>'+esc(fix?'我的实时位置':'设备定位')+'</h3><p>'+esc(geoStatus)+'</p>'+(fix?'<p>WGS84 · '+fix.lat.toFixed(6)+', '+fix.lon.toFixed(6)+'<br>精度约 ±'+Math.round(fix.accuracy)+' 米 · '+esc(new Date(fix.time).toLocaleTimeString('zh-CN'))+' 更新</p>':'')+'<div class="small-actions">'+(watch!==null?'<button data-act="stop-geo">停止定位</button>':'<button data-act="geo-consent">重试定位</button>')+'<button data-act="fit">返回校园</button></div></div>');return;
   }
   const p=places.get(state.selected);
   if(p){
@@ -907,14 +923,14 @@ function drawCard(c){
     const shadeLine=near?'<p class="caption shade-note">'+icon('leaf',13)+' 附近实景「'+esc(near.name)+'」约 '+Math.round(near.d*mpp)+' 米：低角度方向林荫 '+Math.round(near.tree[0]*100)+'%，正午 '+Math.round(near.tree[1]*100)+'%（720 云夏季实景测量）</p>':'';
     // heading · details (description, faculty, doors, notes) · actions. On a phone the details fold to one-line rows and the actions scroll sideways (polish.css).
     const saved=Directory.saved.has(p.id);
-    c.innerHTML='<div class="place-card" data-cat="'+esc(p.category)+'"><button class="close-card" data-act="clear-place" aria-label="关闭地点卡">'+icon('close')+'</button><div class="selected-heading">'+(view360?.photo?'<img alt="" src="'+scenePhoto(view360)+'">':'<span class="heading-icon" aria-hidden="true">'+icon(placeIcon(p),22)+'</span>')+'<div><span class="section-label">SELECTED LANDMARK</span><h3>'+esc(p.name)+'</h3><span class="caption">'+p.category+' · '+esc(p.zone)+(facOf.has(p.id)?' · <em class="fac-tag" style="--fc:'+facOf.get(p.id)[0].u.color+'">'+esc(facLine(p.id).text)+'</em>':'')+'</span></div></div>'+
+    setCard(c,'<div class="place-card" data-cat="'+esc(p.category)+'"><button class="close-card" data-act="clear-place" aria-label="关闭地点卡">'+icon('close')+'</button><div class="selected-heading">'+(view360?.photo?'<img alt="" src="'+scenePhoto(view360)+'">':'<span class="heading-icon" aria-hidden="true">'+icon(placeIcon(p),22)+'</span>')+'<div><span class="section-label">SELECTED LANDMARK</span><h3>'+esc(p.name)+'</h3><span class="caption">'+p.category+' · '+esc(p.zone)+(facOf.has(p.id)?' · <em class="fac-tag" style="--fc:'+facOf.get(p.id)[0].u.color+'">'+esc(facLine(p.id).text)+'</em>':'')+'</span></div></div>'+
       '<div class="card-body"><p>'+esc(p.description)+'</p>'+facBlock(p)+(p.doors?'<p class="caption door-note">'+p.doors.map(d=>'<span><b class="'+d.kind+'">'+doorKind(d)+'</b>'+esc(d.label)+'</span>').join('')+'<small>'+esc(doorSrc(p))+'</small></p>':'')+((atlas.rules?.closedGates||[]).includes(p.id)?'<p class="gate-closed">'+icon('close',13)+' 学生不能从这个门进出</p>':'')+shadeLine+'</div>'+
       '<div class="card-actions"><div class="small-actions"><button class="solid" data-route-to="'+p.id+'">'+icon('route')+'去这里</button>'+(view360?'<button data-scene="'+view360.id+'">'+icon('pano')+(s?'查看实景':'附近实景')+'</button>':'')+indoorBtn(p.id)+'<button data-origin="'+p.id+'">'+icon('walk',14)+'从这出发</button><button data-save="'+p.id+'" aria-pressed="'+saved+'">'+icon('bookmark',14)+(saved?'已收藏':'收藏')+'</button></div>'+
-      '<div class="place-links">'+(inScenes.length?'<button data-place-scenes="'+p.id+'">'+icon('pano',13)+'相关全景 '+inScenes.length+' 个</button>':'')+'<button data-act="share-place">'+icon('arrow-up-right',13)+'分享地点</button></div></div></div>';return;
+      '<div class="place-links">'+(inScenes.length?'<button data-place-scenes="'+p.id+'">'+icon('pano',13)+'相关全景 '+inScenes.length+' 个</button>':'')+'<button data-act="share-place">'+icon('arrow-up-right',13)+'分享地点</button></div></div></div>');return;
   }
   const fu=state.tab==='explore'&&facUnits.get(state.faculty);
-  if(fu){c.innerHTML=facCard(fu);return;}
-  c.innerHTML='<button class="map-callout" data-tab="route"><span class="portal-icon">'+icon('leaf')+'</span><span><strong>试试择荫路线</strong><small>比较距离与日照，找到适合你的走法</small></span>'+icon('chevron')+'</button>';
+  if(fu){setCard(c,facCard(fu));return;}
+  setCard(c,'<button class="map-callout" data-tab="route"><span class="portal-icon">'+icon('leaf')+'</span><span><strong>试试择荫路线</strong><small>比较距离与日照，找到适合你的走法</small></span>'+icon('chevron')+'</button>');
 }
 function showMap(mode){
   settleDimension?.();

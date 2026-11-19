@@ -1,6 +1,6 @@
 """Browser regression for 向阳而行 (Python + Playwright, uses the installed Microsoft Edge).
 
-    pip install playwright        # once; no browser download needed, Edge is used
+    pip install playwright pillow # once; no browser download needed, Edge is used (pillow: the low-memory phone check)
     python serve.py               # in another window, or set SUNWALK_URL
     python verify_browser.py
 
@@ -948,6 +948,76 @@ with sync_playwright() as pw:
     check('手机平面地图：单指拖动跟手并滑行；从地名标签上开始拖也一直跟手；双指捏合只缩放不转（×%.1f），明确地拧一下才旋转（%.0f°）；无脚本错误' % (s1['s'] / s0['s'], w1['r'] - w0['r']),
           abs(a1['x'] - a0['x'] + 90) < 2 and abs(a1['y'] - a0['y'] - 45) < 2 and a2['x'] < a1['x'] - 10 and pin and abs(b1['x'] - b0['x'] - 75) < 2
           and s1['s'] / s0['s'] > 1.5 and s1['r'] == 0 and 20 < w1['r'] - w0['r'] < 61 and abs(w1['s'] / w0['s'] - 1) < .02 and not et, [a0, a1, a2, pin, b0, b1, s0, s1, w0, w1, et]); tp.close()
+
+    # ---- V2026.11.19, phone fixes: live location must not redraw the card; the flat map fits a phone's graphics memory ----
+    gl = browser.new_context(viewport={'width': 390, 'height': 760}, is_mobile=True, has_touch=True, device_scale_factor=3, locale='zh-CN', timezone_id='Asia/Shanghai',
+                             permissions=['geolocation'], geolocation={'latitude': 34.042, 'longitude': 108.901, 'accuracy': 20}); no_weather(gl)
+    g = gl.new_page(); eg = []; g.on('pageerror', lambda e: eg.append(str(e)))
+    g.goto(URL + '#explore', wait_until='networkidle'); g.wait_for_timeout(900)
+    g.evaluate("startGeo()"); g.wait_for_timeout(800); g.evaluate("focusFaculty('arts')"); g.wait_for_timeout(1300)
+    g.evaluate("""(() => { const c = document.getElementById('mapCard'); window.__chips = [...c.querySelectorAll('.fac-depts span, .fac-where button')];
+      const row = c.querySelector('.fac-depts'); row.scrollLeft = 60; window.__scrolled = row.scrollLeft; window.__writes = 0;
+      new MutationObserver(m => __writes += m.length).observe(c, {childList: true, subtree: true}); })()""")
+    for i in range(4):   # a phone sends a new fix about once a second
+        gl.set_geolocation({'latitude': 34.042 + i * 1e-5, 'longitude': 108.901, 'accuracy': 18 + i}); g.wait_for_timeout(600)
+    g.evaluate("geoStatus = '状态变了'; renderCard()")   # same card, different text
+    c1 = g.evaluate("""(() => { const c = document.getElementById('mapCard'), now = [...c.querySelectorAll('.fac-depts span, .fac-where button')];
+      return {on: document.getElementById('liveBtn').classList.contains('on'), fix: !!fix, n: now.length, same: now.every((e, i) => e === __chips[i]), writes: __writes,
+              running: now.filter(e => e.getAnimations().some(a => a.playState === 'running')).length, scroll: c.querySelector('.fac-depts').scrollLeft, scrolled: __scrolled}; })()""")
+    g.evaluate("clearWatch(); focusFaculty('sci')"); g.wait_for_timeout(60)
+    c2 = g.evaluate("(() => { const c = document.getElementById('mapCard'); return {calm: c.classList.contains('calm'), enter: !!c.querySelector('.card-enter'), moving: [...c.querySelectorAll('.fac-depts span')].filter(e => e.getAnimations().length).length}; })()")
+    check('开着实时定位看学部卡：每次新定位都不重画卡片（院系标签不再闪、横向滑开的标签行不回弹）；换一张卡仍有入场动画',
+          c1['on'] and c1['fix'] and c1['n'] > 5 and c1['same'] and c1['running'] == 0 and c1['scroll'] == c1['scrolled'] > 0 and not c2['calm'] and c2['enter'] and c2['moving'] > 0, [c1, c2])
+    g.evaluate("clearFaculty()"); g.wait_for_timeout(400)
+    ly = g.evaluate("""(() => { const cs = (s, k) => getComputedStyle(document.querySelector(s))[k], fx = document.getElementById('skyFx'); const r = {};
+      r.plane = cs('#mapPlane', 'willChange'); r.base = cs('#mapPlane .base-map', 'willChange'); r.pin = cs('#mapPins .pin', 'willChange'); r.zone = cs('#zoneSwitch', 'willChange');
+      r.blur = [cs('.map-type', 'backdropFilter'), cs('.map-tools', 'backdropFilter')]; r.sky = cs('#skyFx', 'display'); r.dim = getComputedStyle(document.getElementById('stage'), '::after').visibility;
+      const h = nowHour; nowHour = () => 22; applySky(); r.night = [document.getElementById('mapViewport').classList.contains('night'), cs('#mapPlane .base-map', 'filter')]; nowHour = h; applySky();
+      stopFly(); const c0 = crispScale; view.scale = c0 * 4; applyTransform(); view.scale = c0 / 2.5; applyTransform(); r.refresh = [c0, crispScale, view.scale]; return r; })()""")
+    check('手机平面地图的图层：底图连同线条一层、地名各自小层、按钮组各自小层，按钮不做毛玻璃，不铺全屏天气层（夜里直接压暗底图），面板收起时遮罩不占图层；大幅缩小途中按当前倍率重画',
+          ly['plane'] == 'transform' and ly['base'] == 'auto' and ly['pin'] == 'transform' and ly['zone'] == 'transform' and ly['blur'] == ['none', 'none'] and ly['sky'] == 'none'
+          and ly['dim'] == 'hidden' and ly['night'][0] and 'brightness' in ly['night'][1] and abs(ly['refresh'][1] - ly['refresh'][2]) < 1e-9 and not eg, [ly, eg]); gl.close()
+    try:
+        from PIL import Image
+    except ImportError:
+        Image = None
+    if Image is None:
+        print('SKIP 低显存手机上的平面地图（要先 pip install pillow）')
+    else:
+        import io
+        from collections import Counter
+        lowmem = pw.chromium.launch(channel='msedge', args=['--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--force-gpu-mem-available-mb=64'])
+        lc = lowmem.new_context(viewport={'width': 390, 'height': 760}, is_mobile=True, has_touch=True, device_scale_factor=3, locale='zh-CN', timezone_id='Asia/Shanghai'); no_weather(lc, flat=False)
+        lp = lc.new_page(); el = []; lp.on('pageerror', lambda e: el.append(str(e)))
+        lp.goto(URL + '#explore', wait_until='networkidle'); lp.wait_for_timeout(1500)   # 3D first, then the flat map, as in the video
+        if lp.evaluate('document.body.dataset.dim') != '2d':
+            lp.click('#dim2dBtn'); lp.wait_for_function("document.body.dataset.dim === '2d' && !switching", timeout=15000)
+        lp.wait_for_timeout(1200); lt = lc.new_cdp_session(lp)
+        def ltouch(kind, pts): lt.send('Input.dispatchTouchEvent', {'type': kind, 'touchPoints': [{'x': x, 'y': y, 'id': i} for i, (x, y) in enumerate(pts)]})
+        seen = {'head': 0, 'nav': 0, 'blank': 0, 'n': 0}
+        def look():
+            im = Image.open(io.BytesIO(lp.screenshot())).convert('RGB'); w, h = im.size; seen['n'] += 1
+            seen['head'] += all(sum(im.getpixel((int(w * f), 9))) < 260 for f in (.3, .5, .7))      # the header is dark navy
+            seen['nav'] += all(sum(im.getpixel((int(w * f), h - 12))) < 260 for f in (.3, .7))      # so is the bottom bar
+            cnt = Counter(); k = 0
+            for yy in range(420, 1500, 27):
+                for xx in range(12, w - 210, 27): c = im.getpixel((xx, yy)); cnt[(c[0] // 6, c[1] // 6, c[2] // 6)] += 1; k += 1
+            seen['blank'] += cnt.most_common(1)[0][1] / k > .55                                     # a missing drawing shows one flat colour
+        def lpinch(a, z, turn=0, n=14):
+            cx, cy = 195, 330; ltouch('touchStart', [(cx - a, cy), (cx + a, cy)])
+            for i in range(1, n + 1):
+                d = a + (z - a) * i / n; q = math.radians(turn * i / n)
+                ltouch('touchMove', [(cx - d * math.cos(q), cy - d * math.sin(q)), (cx + d * math.cos(q), cy + d * math.sin(q))]); lp.wait_for_timeout(16)
+                if i in (4, 8, 12): look()
+            ltouch('touchEnd', [])
+        for _ in range(2): lpinch(30, 150); lp.wait_for_timeout(700)   # as in the video: zoom well in and rest, then pinch out and turn
+        lpinch(150, 60); lp.wait_for_timeout(120); look()
+        lpinch(150, 75, turn=50); lp.wait_for_timeout(700)
+        lpinch(40, 120, turn=-60); lp.wait_for_timeout(700)
+        lpinch(120, 40, turn=40); lp.wait_for_timeout(120); look()
+        check('显存只有 64 MB 的手机上捏合、旋转平面地图：页眉和底栏每一帧都在，底图不整块变白（%d 帧中 %d 帧缺底图）' % (seen['n'], seen['blank']),
+              seen['head'] == seen['n'] and seen['nav'] == seen['n'] and seen['blank'] <= 2 and not el, [seen, el])
+        lowmem.close()
 
     m3 = browser.new_page(viewport={'width': 390, 'height': 800}, locale='zh-CN', timezone_id='Asia/Shanghai', has_touch=True, is_mobile=True); no_weather(m3, summer=True, flat=False); em = []
     m3.on('pageerror', lambda e: em.append(str(e)))
